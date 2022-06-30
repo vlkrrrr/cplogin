@@ -18,24 +18,29 @@ read login, password, url, sleeptime after success from file
 create go routine that fires login request and sleeps after success
 */
 var config = koanf.New(":")
-var logger = &log.Logger{}
+var logger = log.Logger{}
 
 func main() {
-	logfile, err := os.Create("cp_log.txt")
+	logfile, err := os.OpenFile("cp_log.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		fmt.Printf("Could not create/append file: %v", err)
 	}
-	logger = log.New(logfile, "CP_", log.LstdFlags)
+	logger = *log.New(logfile, "CP_", log.LstdFlags)
 	err = config.Load(file.Provider("config.yml"), yaml.Parser())
 	if err != nil {
 		logger.Fatalf("read config error; %v", err)
 	}
-	go login(config.String("url"), config.String("login:user"), config.String("login:password"), time.Duration(config.Int("timeout")))
+	login(config.String("url"), config.String("login:user"), config.String("login:password"), time.Duration(config.Int("timeout")))
 }
 
 func login(url string, user string, password string, duration time.Duration) {
+	test := duration * time.Minute
+	logger.Printf("CP Login started, Duration %v * minutes %v", duration, test)
 	client := http.Client{}
 	loginreq, err := http.NewRequest("GET", url, nil)
+	if true {
+		return
+	}
 	if err != nil {
 		logger.Printf("error while creating request: %v", err)
 	}
