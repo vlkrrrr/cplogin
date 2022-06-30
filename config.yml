@@ -1,0 +1,5 @@
+login:
+  user: test 
+  password: tset
+url: http://detectportal.firefox.com/success.txt
+timeout: 45
