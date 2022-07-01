@@ -34,22 +34,52 @@ func main() {
 }
 
 func login(url string, user string, password string, duration time.Duration) {
-	test := duration * time.Minute
-	logger.Printf("CP Login started, Duration %v * minutes %v", duration, test)
+	logger.Print("CP Login started")
+	retry := 0
 	client := http.Client{}
-	loginreq, err := http.NewRequest("GET", url, nil)
-	if true {
-		return
-	}
-	if err != nil {
-		logger.Printf("error while creating request: %v", err)
-	}
-	loginreq.SetBasicAuth(user, password)
+
 	res, err := client.Get(url)
+	if err != nil {
+		logger.Printf("error while sending base request %v", err)
+	}
+
+	if res.StatusCode == 200 {
+		retry = 0
+		time.Sleep(duration * time.Minute)
+	} else if res.StatusCode == 302 {
+		authurl := res.Header.Get("Location")
+		if len(authurl) > 0 {
+			loginreq, err := http.NewRequest("GET", "authurl", nil)
+			if err != nil {
+				logger.Printf("error while creating login request: %v", err)
+			}
+			loginreq.Header.Add("Authorization", "Basic")
+			client.Do(loginreq)
+		}
+
+		retry++
+		time.Sleep(time.Duration(retry) * time.Minute)
+	} else {
+		//todo
+	}
+
+	//loginreq.SetBasicAuth("hess", "Kopenha§1")
+	res, err := client.Do(loginreq)
 	if err != nil {
 		logger.Printf("error while sending simple request %v", err)
 	}
-	retry := 0
+
+	for _, element := range res.Header {
+		logger.Printf("header-> %v", element)
+	}
+	resBody, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		logger.Printf("client: could not read response body: %s\n", err)
+	}
+	logger.Printf("client: response body: %s\n", resBody)
+	if true {
+		return
+	}
 	if res.StatusCode == 200 {
 		retry = 0
 		time.Sleep(duration * time.Minute)
@@ -60,9 +90,5 @@ func login(url string, user string, password string, duration time.Duration) {
 	}
 
 	logger.Printf("client: status code: %d\n", res.StatusCode)
-	resBody, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		logger.Printf("client: could not read response body: %s\n", err)
-	}
-	logger.Printf("client: response body: %s\n", resBody)
+
 }
